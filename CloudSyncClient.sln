@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudSyncClient", "CloudSyncClient\CloudSyncClient.csproj", "{FB4E359A-74B4-453A-8C6B-092C895BAD03}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DQClient", "DQClient\Client\DQClient.csproj", "{9A0A15A3-AE15-4640-8857-79EEB90067E0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FB4E359A-74B4-453A-8C6B-092C895BAD03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB4E359A-74B4-453A-8C6B-092C895BAD03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB4E359A-74B4-453A-8C6B-092C895BAD03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB4E359A-74B4-453A-8C6B-092C895BAD03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A0A15A3-AE15-4640-8857-79EEB90067E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A0A15A3-AE15-4640-8857-79EEB90067E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A0A15A3-AE15-4640-8857-79EEB90067E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A0A15A3-AE15-4640-8857-79EEB90067E0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
