@@ -10,6 +10,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -22,6 +23,7 @@ namespace CloudSyncClient
             InitializeComponent();
 
             // disable profile text entry fields until new profile button is hit
+            this.comboboxMode.Enabled = false;
             this.profileName.Enabled = false;
             this.AADDomain.Enabled = false;
             this.AADClientID.Enabled = false;
@@ -50,14 +52,12 @@ namespace CloudSyncClient
             this.AADDetail.Visible = false;
 
             // fill in default AppId and AppSecret and verify
-            this.profileName.Text = "Writeback Profile";
+            this.comboboxMode.SelectedIndex = this.comboboxMode.FindStringExact("Headquarters");
+            this.profileName.Text = "Hitachi";
             this.AADDomain.Text = ConfigurationManager.AppSettings["TenantDomainName"];
             this.AADClientID.Text = ConfigurationManager.AppSettings["AppPrincipalId"];
             this.AADPassword.Text = ConfigurationManager.AppSettings["AppPrincipalPassword"];
             VerifyAAD();
-
-            // retrieve all profiles and add to view
-            RefreshProfileListview();
 
             // only new and verify buttons enabled initially
             this.buttonNewProfile.Enabled = true;
@@ -73,7 +73,15 @@ namespace CloudSyncClient
 
         private void buttonVerifyAAD_Click(object sender, EventArgs e)
         {
-            VerifyAAD();
+            if(VerifyAAD())
+            {
+                string message = "Successfully verified company: " + this.AADResult.Text;
+                MessageBox.Show(message);
+            }
+            else
+            {
+                string message = "Failed to verify domain: " + this.AADDomain.Text;
+            }
         }
 
         private void buttonSave_Click(object sender, EventArgs e)
@@ -81,15 +89,27 @@ namespace CloudSyncClient
             CloudTable profileTable = null;
             if (!CreateTableIfNecessary(ref profileTable)) return;
 
+            // ensure that we don't have a duplicate name
+            TableOperation retrieveOperation = TableOperation.Retrieve<ProfileEntity>(this.AADDomain.Text, this.profileName.Text);
+            TableResult retrievedResult = profileTable.Execute(retrieveOperation);
+            if(retrievedResult.Result != null)
+            {
+                // we have a duplicate name!
+                string message = "Profile name " + this.profileName.Text + " already exists for domain " + this.AADDomain.Text;
+                MessageBox.Show(message);
+                return;
+            }
+
             // add profile to table (no concurrency checks for now)
             ProfileEntity newProfile = new ProfileEntity
-                (this.profileName.Text,
-                 this.AADDomain.Text,
-                 this.AADClientID.Text,
-                 this.AADPassword.Text,
-                 this.ADDomain.Text,
-                 this.ADUsername.Text,
-                 this.ADPassword.Text);
+                   (this.comboboxMode.SelectedItem.ToString(),
+                    this.profileName.Text,
+                    this.AADDomain.Text,
+                    this.AADClientID.Text,
+                    this.AADPassword.Text,
+                    this.ADDomain.Text,
+                    this.ADUsername.Text,
+                    this.ADPassword.Text);
             TableOperation insert = TableOperation.InsertOrReplace(newProfile);
             profileTable.Execute(insert);
 
@@ -97,6 +117,7 @@ namespace CloudSyncClient
             RefreshProfileListview();
 
             // all entry fields disabled
+            this.comboboxMode.Enabled = false;
             this.profileName.Enabled = false;
             this.AADDomain.Enabled = false;
             this.AADClientID.Enabled = false;
@@ -115,6 +136,7 @@ namespace CloudSyncClient
         private void buttonCancel_Click(object sender, EventArgs e)
         {
             // disable profile text entry fields
+            this.comboboxMode.Enabled = false;
             this.profileName.Enabled = false;
             this.AADDomain.Enabled = false;
             this.AADClientID.Enabled = false;
@@ -128,7 +150,6 @@ namespace CloudSyncClient
             this.buttonSave.Enabled = false;
             this.buttonCancel.Enabled = false;
             this.buttonEdit.Enabled = false;
-
         }
 
         private void listviewProfile_SelectedIndexChanged(object sender, EventArgs e)
@@ -139,7 +160,9 @@ namespace CloudSyncClient
             {
                 // domain is partition, profile is rowKey
                 string AADDomain = item.SubItems[1].Text;
-                string profileName = item.Text;
+
+                // extract "profileName" from "mode[profileName]"
+                string profileName = Regex.Match(item.Text, @"(?<=\[)(.*?)(?=\])").ToString();
 
                 // retrieve table
                 CloudTable profileTable = null;
@@ -152,6 +175,10 @@ namespace CloudSyncClient
             }
 
             // refresh text boxes based on selection (or lack of selection)
+            if(profile != null)
+            {
+                this.comboboxMode.SelectedIndex = this.comboboxMode.FindStringExact(profile.Mode);
+            }
             this.profileName.Text = (profile!=null) ? profile.RowKey : "";
             this.AADDomain.Text = (profile != null) ? profile.PartitionKey : "";
             this.AADClientID.Text = (profile != null) ? profile.AADUsername : "";
@@ -170,22 +197,10 @@ namespace CloudSyncClient
         }
         private void AllowEditing(bool bNew)
         {
-            // enable text entry, starting with profile name
+            // name and domain are readonly when editing (writable when new) as they are partition and rowkey
+            this.comboboxMode.Enabled = bNew;
             this.profileName.Enabled = bNew;
             this.AADDomain.Enabled = bNew;
-            if (bNew)
-            {
-                // clear list view selection if there was one (accomodates first startup)
-                ListView.SelectedListViewItemCollection sel = this.listviewProfile.SelectedItems;
-                if(sel.Count > 0) this.listviewProfile.SelectedIndices.Clear();
-
-                this.profileName.Focus();
-            }
-            else
-            {
-                this.AADClientID.Focus();
-            }
-
             this.AADClientID.Enabled = true;
             this.ADUsername.Enabled = true;
             this.ADDomain.Enabled = true;
@@ -197,6 +212,21 @@ namespace CloudSyncClient
             this.buttonSave.Enabled = true;
             this.buttonCancel.Enabled = true;
             this.buttonEdit.Enabled = false;
+
+            // set focus as last thing
+            if (bNew)
+            {
+                // clear list view selection if there was one, otherwise not point in clearing defaults
+                ListView.SelectedListViewItemCollection sel = this.listviewProfile.SelectedItems;
+                if(sel.Count > 0) this.listviewProfile.SelectedIndices.Clear();
+                // set focus to profile name to allow entry of a new profile
+                this.profileName.Focus();
+            }
+            else
+            {
+                // set focus to client ID if we are editing an existng profile
+                this.AADClientID.Focus();
+            }
         }
         private bool CreateTableIfNecessary(ref CloudTable profileTable)
         {
@@ -218,11 +248,11 @@ namespace CloudSyncClient
             if (string.IsNullOrEmpty(TABLENAME)) return TABLENAME;
 
             // strip out illegal characters
-            TABLENAME = System.Text.RegularExpressions.Regex.Replace(TABLENAME, "([!@#$%^&*_-])", "");
+            TABLENAME = Regex.Replace(TABLENAME, "([!@#$%^&*_-])", "");
 
             // does TABLENAME now adhere to profile table restrictions?
             string sLegalTableName = "^[A-Za-z][A-Za-z0-9]{2,62}$";
-            bool bLegalTableName = System.Text.RegularExpressions.Regex.IsMatch(TABLENAME, sLegalTableName, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            bool bLegalTableName = Regex.IsMatch(TABLENAME, sLegalTableName, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             if (!bLegalTableName) return null;
             return TABLENAME;
         }
@@ -236,13 +266,15 @@ namespace CloudSyncClient
             return false;
         }
 
-        private void RefreshProfileListview()
+        private bool RefreshProfileListview()
         {
+            bool anyItemsRetrieved = false;
+
             // clear the listview
             listviewProfile.Items.Clear();
 
             CloudTable profileTable = null;
-            if (!CreateTableIfNecessary(ref profileTable)) return;
+            if (!CreateTableIfNecessary(ref profileTable)) return anyItemsRetrieved;
 
             // refresh listview
             var entities = profileTable.ExecuteQuery(new TableQuery<ProfileEntity>()).ToList();
@@ -250,17 +282,20 @@ namespace CloudSyncClient
             {
                 // add to list view
                 string[] liArray = new string[3];
-                liArray[0] = entity.RowKey;
+                liArray[0] = entity.Mode + "[" + entity.RowKey + "]";
                 liArray[1] = entity.PartitionKey;
                 liArray[2] = entity.ADDomain;
 
                 ListViewItem li = new ListViewItem(liArray);
                 listviewProfile.Items.Add(li);
+                anyItemsRetrieved = true;
             }
+            return anyItemsRetrieved;
         }
 
-        private void VerifyAAD()
+        private bool VerifyAAD()
         {
+            bool verified = false;
             IDirectoryChangeManager directoryChangeManager = new DirectoryChangeManager(null, listviewOutput);
             string displayName = null;
             string errorDetail = directoryChangeManager.GetCompanyName(this.AADDomain.Text, this.AADClientID.Text, this.AADPassword.Text, ref displayName);
@@ -269,6 +304,7 @@ namespace CloudSyncClient
                 this.AADResult.Text = displayName;
                 this.AADResult.ForeColor = Color.Green;
                 this.AADResult.Visible = true;
+                verified = true;
 
                 this.AADDetail.Text = "";
                 this.AADDetail.Visible = false;
@@ -283,6 +319,7 @@ namespace CloudSyncClient
             {
                 this.AADResult.Text = "";
                 this.AADResult.Visible = false;
+                verified = false;
 
                 this.AADDetail.Text = errorDetail;
                 this.AADDetail.ForeColor = Color.Red;
@@ -294,7 +331,19 @@ namespace CloudSyncClient
                 this.buttonCancel.Enabled = true;
                 this.buttonEdit.Enabled = false;
             }
-            RefreshProfileListview();
+            // since the profile table is derived from company name, we may need to refresh profile
+            if (verified)
+            {
+                // retrieve all profiles and add to view
+                if (RefreshProfileListview())
+                {
+                    // if there was one, select the first one (in future remember this machine)
+                    listviewProfile.Items[0].Selected = true;
+
+                    // selected item may point to different company, but they can verify again if they want
+                }
+            }
+            return verified;
         }
 
         private void Writeback_Enter(object sender, EventArgs e)

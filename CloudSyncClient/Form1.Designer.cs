@@ -165,7 +165,7 @@
             this.comboboxMode.Location = new System.Drawing.Point(240, 223);
             this.comboboxMode.Name = "comboboxMode";
             this.comboboxMode.Size = new System.Drawing.Size(201, 28);
-            this.comboboxMode.TabIndex = 26;
+            this.comboboxMode.TabIndex = 1;
             // 
             // label8
             // 
@@ -215,7 +215,7 @@
             // Profile
             // 
             this.Profile.Text = "Profile";
-            this.Profile.Width = 125;
+            this.Profile.Width = 175;
             // 
             // AAD_Domain
             // 
@@ -252,7 +252,7 @@
             this.ADDomain.Location = new System.Drawing.Point(240, 468);
             this.ADDomain.Name = "ADDomain";
             this.ADDomain.Size = new System.Drawing.Size(560, 26);
-            this.ADDomain.TabIndex = 17;
+            this.ADDomain.TabIndex = 6;
             // 
             // ADDomainLabel
             // 
@@ -268,7 +268,7 @@
             this.AADDomain.Location = new System.Drawing.Point(240, 322);
             this.AADDomain.Name = "AADDomain";
             this.AADDomain.Size = new System.Drawing.Size(560, 26);
-            this.AADDomain.TabIndex = 15;
+            this.AADDomain.TabIndex = 3;
             // 
             // AzureADDomainLabel
             // 
@@ -351,7 +351,7 @@
             this.profileName.Location = new System.Drawing.Point(240, 272);
             this.profileName.Name = "profileName";
             this.profileName.Size = new System.Drawing.Size(560, 26);
-            this.profileName.TabIndex = 3;
+            this.profileName.TabIndex = 2;
             // 
             // ProfileNameLabel
             // 

@@ -24,6 +24,7 @@ namespace CloudSyncClient
         public ProfileEntity() { }
         public ProfileEntity
         (
+            string mode,
             string profile,
             string aadDomain, 
             string aadUsername, 
@@ -32,6 +33,7 @@ namespace CloudSyncClient
             string adUsername,
             string adPassword)
         {
+            this.Mode = mode;
             this.RowKey = profile;
             this.PartitionKey = aadDomain;
             this.AADUsername = aadUsername;
@@ -41,6 +43,7 @@ namespace CloudSyncClient
             this.ADPassword = adPassword;
 
         }
+        public string Mode { get; set; }
         public string AADUsername { get; set; }
         public string AADPassword { get; set; }
         public string ADDomain { get; set; }
