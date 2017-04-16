@@ -247,7 +247,10 @@ namespace CloudSyncClient
             string TABLENAME = this.AADResult.Text;
             if (string.IsNullOrEmpty(TABLENAME)) return TABLENAME;
 
-            // strip out illegal characters
+            // strip out spaces
+            TABLENAME = TABLENAME.Replace(" ", String.Empty);
+
+            // strip out other illegal characters
             TABLENAME = Regex.Replace(TABLENAME, "([!@#$%^&*_-])", "");
 
             // does TABLENAME now adhere to profile table restrictions?
